@@ -1,0 +1,60 @@
+version: "3.8"
+
+networks:
+  blossomnet:
+    driver:
+      bridge
+
+services:
+  blossom:
+    image: jasminexzzz/blossom:latest
+    container_name: blossom-backend
+    volumes:
+      # 【需修改】 
+      # 将冒号(:)前的部分改成你运行 docker 的设备的某个路径，不要修改冒号后面的内容。  
+      # 如果是windows环境，可以使用/c/home/bl/img/来指定磁盘 
+      - ./data/blossom/bl/:/home/bl/ 
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://blmysql:3306/blossom?useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true&allowMultiQueries=true&useSSL=false&&serverTimezone=GMT%2B8
+      SPRING_DATASOURCE_USERNAME: root
+      # 【可选修改】配置数据库密码，这个改了下方的黄色部分也要修改 
+      SPRING_DATASOURCE_PASSWORD: XP5*5402m`9g 
+    ports:
+      - "${PANEL_APP_PORT_HTTP}:9999"
+    networks:
+      - blossomnet
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9999/sys/alive"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    restart: always
+    depends_on:
+      blmysql:
+        condition: service_healthy
+  blmysql:
+    image: mysql:8.0.31
+    container_name: blossom-mysql
+    restart: on-failure:3
+    volumes:
+      # 【需修改】将冒号(:)前的部分改成你运行 docker 的设备的某个路径，不要修改冒号后面的内容。  
+      - ./data/blossom/Docker/mysql/data:/var/lib/mysql 
+      - ./data/blossom/Docker/mysql/log:/var/log/mysql 
+      - ./data/blossom/Docker/mysql/mysql-files/log:/var/lib/mysql-files 
+    environment:
+      MYSQL_DATABASE: blossom
+      # 【可选修改】这个改了上方的黄色部分也要修改。需要与 services.blossom.environment.SPRING_DATASOURCE_PASSWORD 相同 
+      MYSQL_ROOT_PASSWORD: XP5*5402m`9g 
+      LANG: C.UTF-8
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    networks:
+      - blossomnet
+    healthcheck:
+      # 【可选修改】如果修改了上方的数据库密码「MYSQL_ROOT_PASSWORD」，下方的 -p 后的密码也要修改 
+      test: ["CMD", "mysqladmin", "-uroot", "-pXP5*5402m`9g", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
